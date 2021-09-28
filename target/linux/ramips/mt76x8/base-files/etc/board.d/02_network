@@ -15,6 +15,7 @@ ramips_setup_interfaces()
 	glinet,vixmini|\
 	hak5,wifi-pineapple-mk7|\
 	mediatek,linkit-smart-7688|\
+	miromico,miro-edge-7688|\
 	onion,omega2p|\
 	onion,omega2|\
 	ravpower,rp-wd009|\

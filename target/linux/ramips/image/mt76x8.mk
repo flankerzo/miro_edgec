@@ -249,6 +249,15 @@ define Device/mediatek_linkit-smart-7688
 endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
 
+define Device/miromico_miro-edge-7688
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Miromico
+  DEVICE_MODEL := miro Edge 7688
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += miroedge7688
+endef
+TARGET_DEVICES += miromico_miro-edge-7688
+
 define Device/mediatek_mt7628an-eval-board
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k

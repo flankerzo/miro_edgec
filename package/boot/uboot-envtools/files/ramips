@@ -23,6 +23,7 @@ engenius,esr600h)
 	;;
 allnet,all0256n-4m|\
 allnet,all0256n-8m|\
+miromico,miro-edge-7688|\
 allnet,all5002)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
