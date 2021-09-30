@@ -4,8 +4,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "mediatek,linkit-smart-7688", "mediatek,mt7628an-soc";
-	model = "MediaTek LinkIt Smart 7688";
+	compatible = "miromico,miro-edge-7688", "mediatek,mt7628an-soc";
+	model = "Miromico miro Edge 7688";
 
 	aliases {
 		led-boot = &led_wifi;
