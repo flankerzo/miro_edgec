@@ -1,0 +1,34 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - export LC_ALL=C.UTF-8
+  - export LANG=C.UTF-8
+
+stages:
+  - build
+
+picogw:
+  stage: build
+  tags:
+    - baremetal-with-docker
+  variables:
+    USE_ENV: "update"
+    # The git clean flags are modified, so the toolchain stays on the runner
+    # This can be commented out, if a clean build is desired
+    GIT_CLEAN_FLAGS: -x -f -e .config files package/feeds** staging_dir/** build_dir/** dl/** feeds/**
+  script:
+    # Since we don't clean everything, we dont have to clone the environments
+    # everytime
+    # - git clone git@clarion.miromico.ch:p3111_miromico_picogw-card/openwrt-envs.git env || exit 0
+    - ./scripts/feeds update
+    - ./scripts/feeds install -a
+    - ./scripts/env switch $USE_ENV
+    - make clean
+    - make -j16
+  artifacts:
+    paths:
+      - bin/**/miro-openwrt*sysupgrade.bin
+      - bin/**/miro-openwrt*.manifest
+      - bin/**/*.buildinfo
+    expire_in: 1 week
