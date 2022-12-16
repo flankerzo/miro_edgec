@@ -1,0 +1,33 @@
+config interface 'loopback'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+	option device 'lo'
+
+config globals 'globals'
+	option ula_prefix 'fdf8:86e5:3133::/48'
+
+config interface 'lan'
+	option proto 'dhcp'
+	option hostname 'miro_Edge'
+	option device 'br-lan'
+	option defaultroute '1'
+	option metric '10'
+
+config switch
+	option name 'switch0'
+	option reset '1'
+	option enable_vlan '0'
+
+config interface 'ethfix'
+	option proto 'static'
+	option netmask '255.255.255.240'
+	option ipaddr '169.254.100.100'
+	option metric '10'
+	option device 'br-lan'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth0'
+

@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+
+start_service(){
+	procd_open_instance lora
+	procd_set_param command /opt/packetfw
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param respawn 1000 50 0
+	# needed to make reconfig triggers work with daemons/scripts without parameters (??)
+	procd_set_param file /etc/config/miropgw
+	procd_set_param file /etc/config/station
+	procd_set_param pidfile /var/run/lora.pid
+	procd_close_instance
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "miropgw"
+	procd_add_reload_trigger "station"
+	procd_add_config_trigger "config.change" "miropgw" /etc/init.d/lora restart
+	procd_add_config_trigger "config.change" "station" /etc/init.d/lora restart
+}
+
+# this is called before procd stops/kills the process, i.e. an intentional stop of the service
+stop_service()
+{
+	start-stop-daemon  -K -p /tmp/loriot.pid
+}
+

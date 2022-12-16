@@ -1,0 +1,14 @@
+
+config antenna 'antenna'
+# 0: internal antenna
+# 1: external antenna
+
+	option ant '1'
+
+config forwarder 'forwarder'
+# valid options: legacy, 1302, 2g4
+
+	option ptype '1302'
+	option saddr '127.0.0.1'
+	option pup '1700'
+

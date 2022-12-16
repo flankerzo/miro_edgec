@@ -1,0 +1,138 @@
+#!/bin/sh
+set -x
+
+# define gpios via base
+GPIOBASE=480
+NRST_PIN=$((14+GPIOBASE))
+BOOT_PIN=$((17+GPIOBASE))
+
+DEVICE="/dev/pgw"
+
+# init gpios
+echo $NRST_PIN > /sys/class/gpio/export
+echo out > "/sys/class/gpio/gpio$NRST_PIN/direction"
+
+echo $BOOT_PIN > /sys/class/gpio/export
+echo out > "/sys/class/gpio/gpio$BOOT_PIN/direction"
+
+
+set_nreset () {
+        echo "$1" > "/sys/class/gpio/gpio$NRST_PIN/value"
+}
+
+set_boot () {
+        echo "$1" > "/sys/class/gpio/gpio$BOOT_PIN/value"
+}
+
+set_nreset 0
+set_boot 0
+sleep 1
+set_nreset 1
+while [ ! -e $DEVICE ]
+do sleep 1
+done
+
+ANT=$(uci get miropgw.antenna.ant)
+PFW=$(uci get miropgw.forwarder.ptype)
+PFADDR=$(uci get miropgw.forwarder.saddr)
+PFADDRLOR=$(uci get miropgw.forwarder.saddrlor)
+PFPORT=$(uci get miropgw.forwarder.pup)
+REGION=$(uci get miropgw.forwarder.region)
+LORIOT_PIDFILE="/tmp/loriot.pid"
+LORIOT_PFW="/opt/lpf"
+LORIOT_TIMEOUT=$(uci get miropgw.forwarder.loriot_rollback_timeout)
+
+if [ -z "$LORIOT_TIMEOUT" ]
+then
+    LORIOT_TIMEOUT=0
+fi
+
+if [ -z "$ANT" ]
+then
+# internal antenna default
+        ANT=0
+fi
+
+if [ -z "$REGION" ]
+then
+# eu868 default
+        REGION="eu868"
+fi
+
+if [ -z "$PFW" ]
+then
+        PFW="legacy"
+        PFPORT="1700"
+        PFADDR="router.eu.thethings.network"
+fi
+
+# compute and set gateway ID based on MAC address of the ethernet interface
+GWID="`sed 's/://g' /sys/class/net/eth0/address`"
+FIRSTBYTES=`echo ${GWID} | cut -b1-6`
+LASTBYTES=`echo ${GWID} | cut -b7-12`
+
+TEMPLATE="/opt/global_conf.json.EU868.templ"
+
+gen_conf_from_templ () {
+    sed "s/PLACEHOLDER/${FIRSTBYTES}fffe${LASTBYTES}/" $1 \
+    |  sed "s/PORT/${PFPORT}/" | sed "s/PFADDR/${PFADDR}/" > /tmp/global_conf.json
+}
+
+if [[ ${PFW} == "legacy" ]] ; then
+    # default is eu868
+    TEMPLATE="/opt/global_conf.json.EU868.templ"
+    if [[ ${REGION} == "us915" ]] ; then
+        TEMPLATE="/opt/global_conf.json.US915.templ"
+    fi
+
+    gen_conf_from_templ $TEMPLATE
+    /opt/util_settings -w ${ANT},1,1
+    sleep 5
+    # exec /opt/dummylegacy.sh
+    exec /opt/lora_pkt_fwd -c /tmp -d $DEVICE
+
+elif [[ ${PFW} == "basicstation" ]] ; then
+    exec env RADIODEV=$DEVICE /usr/sbin/station --home /etc/station/
+
+elif [[ ${PFW} == "2g4" ]] ; then
+    TEMPLATE="/opt/2g4/global_conf.json.templ"
+    gen_conf_from_templ $TEMPLATE
+    exec /opt/2g4/lora_pkt_fwd -c /tmp/global_conf.json
+
+elif [[ ${PFW} == "1302" ]] ; then
+    # default is eu868
+    TEMPLATE="/opt/1302/global_conf.json.sx1250.EU868.templ"
+    if [[ ${REGION} == "us915" ]] ; then
+        TEMPLATE="/opt/1302/global_conf.json.sx1250.US915.templ"
+    fi
+    gen_conf_from_templ $TEMPLATE
+    /opt/1302/ant_sel -a ${ANT} -d ${DEVICE}
+    exec /opt/1302/lora_pkt_fwd -c /tmp/global_conf.json
+
+else
+    # pinmux: set i2c lines to gpio
+    /usr/bin/io -4 -w 0x10000060 0x50154445
+    /opt/util_settings -w ${ANT},1,1
+    /etc/init.d/lledstat start
+    sleep 5
+    if [ $LORIOT_TIMEOUT -gt 0 ]; then
+        LORIOT_PARAMS="-f -s ${PFADDRLOR}"
+        start-stop-daemon  -S -m -p ${LORIOT_PIDFILE} -b -x ${LORIOT_PFW} -- ${LORIOT_PARAMS} 2>&1 | logger -t loriot-pfw
+        sleep $LORIOT_TIMEOUT
+        # process still running?
+        start-stop-daemon -K -t -p ${LORIOT_PIDFILE}
+        if [ $? -eq 0 ]; then
+            echo "loriot start sucessful"
+            while [ 1 ]; do
+                sleep 600
+                echo "."
+            done
+        else
+            echo "process died: ROLLBACK"
+	        rm -f /overlay/upper${LORIOT_PFW}
+	        mount -o remount /
+        fi
+    else
+        exec ${LORIOT_PFW} -f -s ${PFADDRLOR}
+    fi
+fi

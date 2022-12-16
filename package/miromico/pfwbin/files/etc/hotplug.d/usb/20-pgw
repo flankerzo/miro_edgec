@@ -1,0 +1,23 @@
+#!/bin/sh
+. /lib/functions.sh
+
+PGWDEV=/dev/pgw
+
+# Description: Action executed on boot (bind) and with the system on the fly
+if [ "${ACTION}" = "bind" ]; then
+  case "${PRODUCT}" in
+    2458*) # bluegiga usb  dongle, don't do anything
+    ;;
+    *)  # otherwise assume it's a gateway card if the ttyACM* has been added
+      DEVICE_NAME="$(ls /sys/${DEVPATH} | grep tty)"
+      DEVICE_TTY="$(ls /sys/${DEVPATH}/tty/)"
+      case "$DEVICE_TTY" in
+      ttyACM*)
+        logger -t hotplug "Symlink from /dev/${DEVICE_TTY} to ${PGWDEV} created"
+        rm -f $PGWDEV
+        ln -s $DEVICE_TTY $PGWDEV
+      ;;
+      esac
+    ;;
+  esac
+fi
