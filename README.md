@@ -1,3 +1,48 @@
+
+Its repurposed gateway from Miromico, that is flashed with openwrt from theier site, but its not so simple, you need to change some adresses.
+
+Flashing, 
+UART connection 57600
+when booting press 4 for menu.
+
+setenv ipaddr 169.254.100.100
+setenv serverip 169.254.100.101
+if no ip set it : setenv ethaddr 10:CE:45:00:EC:82
+saveenv
+check
+printenv ipaddr
+printenv serverip
+printenv ethaddr
+
+setup tftp on pc.
+direct connection to pc, set pc ip 169.254.100.101 , mask 255.255.255.0
+put to tftp folder target, sysupgrade file
+in gateway 
+tftpboot 0x80100000 test127.bin  (test127.bin is your generated sysupgrade file)
+check if it is correct
+md 0x80100000
+Should start with 56190527
+erase linux
+cp.linux , i think or add 0x80100000
+it should boot
+
+then packet forwarder 
+vi /etc/config/miropgw
+
+config antenna 'antenna'
+# 0: internal antenna
+# 1: external antenna
+
+        option ant '1'
+
+config forwarder 'forwarder'
+# valid options: legacy, 1302, 2g4
+
+        option ptype '2g4'
+        option saddr '192.168.50.51'
+        option pup '1700'
+you may need to flassh LoRa gateway card for 2.4 GHz ISM band.
+
 ![OpenWrt logo](include/logo.png)
 
 OpenWrt Project is a Linux operating system targeting embedded devices. Instead
