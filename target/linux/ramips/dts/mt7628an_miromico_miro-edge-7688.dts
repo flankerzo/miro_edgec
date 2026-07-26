@@ -116,7 +116,7 @@
 			partition@C0000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0xC0000 0x1f40000>;
+				reg = <0x50000 0x1fb0000>;
 			};
 		};
 	};
