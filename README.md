@@ -38,10 +38,36 @@ config antenna 'antenna'
 config forwarder 'forwarder'
 # valid options: legacy, 1302, 2g4
 
-        option ptype '2g4'
-        option saddr '192.168.50.51'
-        option pup '1700'
+        option ptype '2g4'  --lorawancard
+        option saddr '192.168.50.51'  -- your serverip
+        option pup '1700'  --port, where you send and pull messages
 you may need to flassh LoRa gateway card for 2.4 GHz ISM band.
+from lora2g4.dfu, you need to isntal dfu and usb utils.
+
+after that, connect to internet
+opkg upgrade $(opkg list-upgradable|awk '{printf $1" "}')
+it will update everything.
+
+how to send message
+Usage: util_tx_test {options}
+Available options:
+ -h print this help
+ -n <int or service> port number for gateway link
+ -f <float> target frequency in MHz
+ -m <str> Modulation type ['LORA, 'FSK']
+ -s <int> Spreading Factor [7:12]
+ -b <int> Modulation bandwidth in kHz [125,250,500]
+ -d <uint> FSK frequency deviation in kHz [1:250]
+ -r <float> FSK bitrate in kbps [0.5:250]
+ -p <int> RF power (dBm)
+ -z <uint> Payload size in bytes [9:255]
+ -t <int> pause between packets (ms)
+ -x <int> numbers of times the sequence is repeated
+ -v <uint> test ID, inserted in payload for PER test [0:255]
+ -i send packet using inverted modulation polarity
+ 
+logread -f usefeull for seeing what it is doing
+
 
 ![OpenWrt logo](include/logo.png)
 
